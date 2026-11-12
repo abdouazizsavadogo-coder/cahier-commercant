@@ -36,13 +36,13 @@ nav button{flex:1;border:0;background:none;color:var(--mu);padding:14px 2px;font
 <script>
 const K="cahier-commercant-v1";let D=null;
 try{D=JSON.parse(localStorage.getItem(K))}catch(e){}
-if(!D)D={shop:"Ma boutique",n:10,p:[{id:1,n:"Ciment",p:5000,c:4200,s:40},{id:2,n:"Fer 8 mm",p:4500,c:3800,s:25},{id:3,n:"Pointes (kg)",p:1200,c:900,s:50},{id:4,n:"Peinture",p:8000,c:6500,s:12}],s:[],e:[],cr:[],j:[]};
+if(!D)D={shop:"Ma boutique",n:10,p:[{id:1,n:"Ciment",p:5000,c:4200,s:40},{id:2,n:"Fer 8 mm",p:4500,c:3800,s:25},{id:3,n:"Pointes (kg)",p:1200,c:900,s:50},{id:4,n:"Peinture",p:8000,c:6500,s:12}],s:[],e:[],cr:[],j:[]};D.p.forEach(p=>{if(!p.u)p.u=/\(kg\)/.test(p.n)?"kg":"unité"});
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(D))}catch(e){}};
 const $=s=>document.querySelector(s),F=n=>Math.round(n).toLocaleString("fr-FR")+" F";
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const PY={cash:["Espèces","571"],om:["Orange Money","585"],mm:["Moov Money","585"],cr:["À crédit","411"]};
 const CT={"605":"Eau, électricité, fournitures","61":"Transport","622":"Loyer","66":"Salaires","658":"Autres charges"};
-let tab="home",cart={},pay="cash",cl="",ph="",msg="",ex={a:"",l:"",c:"605",m:"cash"},wipe=false;
+let tab="home",cart={},pay="cash",cl="",ph="",msg="",ex={a:"",l:"",c:"605",m:"cash"},wipe=false,cf={},xp=7;
 const dk=t=>new Date(t).toDateString(),d0=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
 const mg=s=>s.items.reduce((a,i)=>a+(i.p-i.c)*i.q,0);
 const rest=c=>c.amt-c.paid;
@@ -55,11 +55,11 @@ function parseQ(txt){
  norm(txt).split(/,|;|\bet\b|\bplus\b/).forEach(x=>{x=x.trim();if(!x)return;
   let q=1;const m=x.match(/\d+/);
   if(m){q=+m[0];x=x.replace(m[0],"")}else{for(const w in NB){const re=new RegExp("\\b"+w+"\\b");if(re.test(x)){q=NB[w];x=x.replace(re,"");break}}}
-  x=x.replace(/\b(sac|sacs|de|du|des|d)\b/g," ").replace(/\s+/g," ").trim();
+  x=x.replace(/\b(sac|sacs|kg|tonne|tonnes|metre|metres|m3|paire|paires|unite|unites|de|du|des|d)\b/g," ").replace(/\s+/g," ").trim();
   const p=x&&D.p.find(p=>{const n=norm(p.n);return n.includes(x)||x.includes(n.split(" ")[0])});
-  if(p){cart[p.id]=(cart[p.id]||0)+q;ok++}else if(x)bad.push(x)});
+  if(p){if(p.s!=null&&(cart[p.id]||0)+q>p.s)bad.push("stock insuffisant ("+p.n+")");else{cart[p.id]=(cart[p.id]||0)+q;ok++}}else if(x)bad.push(x)});
  return{ok,bad}}
-function quick(){const r=parseQ($("#qk").value);msg=r.bad.length?"Produit introuvable : "+r.bad.join(", "):(r.ok?"":"Je n’ai pas compris. Exemple : 3 ciment, 2 fer");render()}
+function quick(){const r=parseQ($("#qk").value);msg=r.bad.length?"Non ajouté : "+r.bad.join(", "):(r.ok?"":"Je n’ai pas compris. Exemple : 3 ciment, 2 fer");render()}
 function dict(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!R){msg="Dictée indisponible ici : touchez le micro de votre clavier.";return render()}
  const r=new R();r.lang="fr-FR";r.onresult=e=>{$("#qk").value=e.results[0][0].transcript;quick()};
@@ -72,13 +72,93 @@ function undo(){const s=D.s[D.s.length-1];if(!s)return;
  D.j=D.j.filter(j=>j.t!=s.t);D.cr=D.cr.filter(c=>c.t!=s.t);save();msg="Dernière vente annulée.";render()}
 function bk(){bkv=JSON.stringify(D);try{navigator.clipboard.writeText(bkv)}catch(e){}msg="Sauvegarde prête : copiez le texte ci-dessous et gardez-le (note ou message WhatsApp à vous-même).";render()}
 function rs(){try{const o=JSON.parse($("#bt").value);if(!o||!Array.isArray(o.p)||!Array.isArray(o.s))throw 0;D=o;save();bkv="";msg="Données restaurées."}catch(e){msg="Texte de sauvegarde invalide."}render()}
-function add(id){cart[id]=(cart[id]||0)+1;msg="";render()}
+const UN=["unité","kg","tonne","m3","paire","mètre"];
+const XE=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function add(id){const p=D.p.find(x=>x.id==id),n=(cart[id]||0)+1;
+ if(p.s!=null&&n>p.s){msg=p.s<=0?p.n+" : stock épuisé, vente impossible.":"Stock insuffisant : "+p.n+" (reste "+p.s+" "+p.u+")";return render()}
+ cart[id]=n;msg="";render()}
+function setq(id,v){const p=D.p.find(x=>x.id==id);v=parseFloat(v);
+ if(!(v>0)){delete cart[id];msg=""}
+ else if(p.s!=null&&v>p.s){if(p.s>0)cart[id]=p.s;else delete cart[id];msg="Stock insuffisant : "+p.n+" (reste "+p.s+" "+p.u+")"}
+ else{cart[id]=v;msg=""}render()}
+function editco(){cf=Object.assign({},D.co);go("setup")}
+function logo(inp){const f=inp.files[0];if(!f)return;const r=new FileReader();
+ r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,240/Math.max(im.width,im.height)),c=document.createElement("canvas");
+  c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);const g=c.getContext("2d");g.fillStyle="#fff";g.fillRect(0,0,c.width,c.height);g.drawImage(im,0,0,c.width,c.height);
+  cf.logo=c.toDataURL("image/jpeg",0.8);cf.lw=c.width;cf.lh=c.height;render()};im.src=r.result};r.readAsDataURL(f)}
+function saveco(){if(["n","c","v","r","p"].some(x=>!(cf[x]||"").trim())){msg="Remplissez les champs marqués d’une étoile (*).";return render()}
+ D.co=Object.assign({},cf);D.shop=D.co.n;save();msg="Informations enregistrées.";tab="home";render()}
+function Se(){
+ const f=(k,l,ph,ex)=>`<label class="mu">${l}</label><input ${ex||""} placeholder="${ph}" value="${esc(cf[k]||"")}" oninput="cf.${k}=this.value">`;
+ return `<h1>${D.co?"Informations de l’entreprise":"Bienvenue"}</h1>${D.co?"":`<p class="mu">Renseignez votre entreprise une seule fois. Ces informations apparaîtront sur vos exports.</p>`}
+ ${f("n","Nom commercial *","Ex. Boutique Bonkoungou")}${f("c","Pays *","Burkina Faso")}${f("v","Ville *","Ouagadougou")}${f("q","Secteur / quartier","Ex. Secteur 15")}${f("t","Contact (téléphone)","Ex. 70 00 00 00",'inputmode="tel"')}${f("r","Nom du responsable *","Nom")}${f("p","Prénom du responsable *","Prénom")}
+ <label class="mu">Logo (facultatif)</label>${cf.logo?`<img src="${cf.logo}" alt="Logo" style="display:block;width:80px;height:80px;object-fit:cover;border-radius:12px;margin:6px 0">`:""}<input type="file" accept="image/*" onchange="logo(this)">
+ ${msg?`<p class="er">${esc(msg)}</p>`:""}<button class="pb" style="margin-top:10px" onclick="saveco()">Enregistrer</button>${D.co?`<button class="sb" onclick="go('prod')">Annuler</button>`:""}`}
+const dd=t=>new Date(t).toLocaleDateString("fr-FR"),stamp=()=>new Date().toISOString().slice(0,10);
+function dat(){const a=xp?d0()-(xp-1)*864e5:0,f=x=>x.t>=a,s=D.s.filter(f),e=D.e.filter(f),j=D.j.filter(f);
+ const rv=s.reduce((x,y)=>x+y.tot,0),ch=e.reduce((x,y)=>x+y.a,0);
+ return{s,e,j,rv,ch,gain:s.reduce((x,y)=>x+mg(y),0)-ch,dt:D.cr.reduce((x,c)=>x+rest(c),0),lb:xp?"Derniers "+xp+" jours":"Toutes les données"}}
+function tabs(){const q=dat(),C=D.co,pl=k=>PY[k]?PY[k][0]:k,r=Math.round;
+ return[["Résumé",[["Entreprise",C.n],["Responsable",C.p+" "+C.r],["Pays",C.c],["Ville",C.v],["Secteur / quartier",C.q||""],["Contact",C.t||""],["Période",q.lb],["Édité le",dd(Date.now())],["Ventes (FCFA)",r(q.rv)],["Dépenses (FCFA)",r(q.ch)],["Gain estimé (FCFA)",r(q.gain)],["Dettes à recevoir (FCFA)",r(q.dt)]]],
+ ["Ventes",[["Date","Client","Détail","Paiement","Total","Marge"]].concat(q.s.map(s=>[dd(s.t),s.client||"",s.items.map(i=>i.q+" "+(i.u||"")+" "+i.n).join(", "),pl(s.pay),r(s.tot),r(mg(s))]))],
+ ["Dépenses",[["Date","Libellé","Compte","Montant"]].concat(q.e.map(e=>[dd(e.t),e.l,e.c,r(e.a)]))],
+ ["Dettes",[["Date","Client","Téléphone","Montant","Payé","Reste"]].concat(D.cr.filter(c=>rest(c)>0).map(c=>[dd(c.t),c.client,c.phone||"",r(c.amt),r(c.paid),r(rest(c))]))],
+ ["Stock",[["Produit","Unité","Prix vente","Prix achat","Stock"]].concat(D.p.map(p=>[p.n,p.u,p.p,p.c,p.s==null?"":p.s]))],
+ ["Journal",[["Date","Libellé","Débit","Crédit","Montant"]].concat(q.j.map(j=>[dd(j.t),j.l,j.d,j.c,r(j.m)]))]]}
+function Ex(){return `<h1>Export</h1><p class="mu">Choisissez la période, puis le format.</p>
+ <div class="ch">${[[7,"7 jours"],[30,"30 jours"],[0,"Tout"]].map(x=>`<button class="c ${xp==x[0]?"on":""}" onclick="xp=${x[0]};render()">${x[1]}</button>`).join("")}</div>
+ ${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}
+ <button class="pb" onclick="xl()">Exporter en Excel (.xlsx)</button><button class="sb" onclick="pd()">Exporter en PDF</button>
+ <p class="mu">Contenu : résumé de l’entreprise, ventes, dépenses, dettes, stock et journal comptable.</p>`}
+const CRT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc=u=>{let c=-1;for(let i=0;i<u.length;i++)c=CRT[(c^u[i])&255]^(c>>>8);return(c^-1)>>>0};
+function zip(files){const P=[],Z=[];let o=0;const le=(v,n)=>{const a=[];for(let i=0;i<n;i++)a.push((v>>>(8*i))&255);return a},E=new TextEncoder();
+ files.forEach(([n,s])=>{const nm=E.encode(n),d=E.encode(s),c=crc(d);
+  const hd=[].concat(le(0x04034b50,4),le(20,2),le(0x800,2),le(0,2),le(0,2),le(0x21,2),le(c,4),le(d.length,4),le(d.length,4),le(nm.length,2),le(0,2));
+  P.push(new Uint8Array(hd),nm,d);
+  Z.push(new Uint8Array([].concat(le(0x02014b50,4),le(20,2),le(20,2),le(0x800,2),le(0,2),le(0,2),le(0x21,2),le(c,4),le(d.length,4),le(d.length,4),le(nm.length,2),le(0,2),le(0,2),le(0,2),le(0,2),le(0,4),le(o,4))),nm);
+  o+=hd.length+nm.length+d.length});
+ const cs=Z.reduce((a,x)=>a+x.length,0),e=new Uint8Array([].concat(le(0x06054b50,4),le(0,2),le(0,2),le(files.length,2),le(files.length,2),le(cs,4),le(o,4),le(0,2))),all=[...P,...Z,e],T=new Uint8Array(all.reduce((a,x)=>a+x.length,0));
+ let q=0;all.forEach(x=>{T.set(x,q);q+=x.length});return T}
+function sheet(rows){const cn=i=>String.fromCharCode(65+i);
+ return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cols><col min="1" max="6" width="24" customWidth="1"/></cols><sheetData>'+rows.map((r,i)=>'<row r="'+(i+1)+'">'+r.map((v,k)=>typeof v=="number"?'<c r="'+cn(k)+(i+1)+'"><v>'+v+'</v></c>':'<c r="'+cn(k)+(i+1)+'" t="inlineStr"><is><t>'+XE(v)+'</t></is></c>').join("")+'</row>').join("")+'</sheetData></worksheet>'}
+function xl(){const T=tabs(),H='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>',R="http://schemas.openxmlformats.org/officeDocument/2006/relationships";
+ const f=[["[Content_Types].xml",H+'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+T.map((t,i)=>'<Override PartName="/xl/worksheets/sheet'+(i+1)+'.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join("")+'</Types>'],
+ ["_rels/.rels",H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="'+R+'/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+ ["xl/workbook.xml",H+'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="'+R+'"><sheets>'+T.map((t,i)=>'<sheet name="'+t[0]+'" sheetId="'+(i+1)+'" r:id="rId'+(i+1)+'"/>').join("")+'</sheets></workbook>'],
+ ["xl/_rels/workbook.xml.rels",H+'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+T.map((t,i)=>'<Relationship Id="rId'+(i+1)+'" Type="'+R+'/worksheet" Target="worksheets/sheet'+(i+1)+'.xml"/>').join("")+'</Relationships>']
+ ].concat(T.map((t,i)=>["xl/worksheets/sheet"+(i+1)+".xml",sheet(t[1])]));
+ out("cahier-"+stamp()+".xlsx","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",zip(f))}
+function pd(){const T=tabs(),C=D.co,pg=[[]];let y=735;
+ const nl=n=>{y-=n;if(y<50){pg.push([]);y=800}},tx=(x,s,b,z,yy)=>pg[pg.length-1].push([x,yy||y,s,b,z||9]);
+ const fm=n=>typeof n=="number"?String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g," "):n,hx=C.logo?112:40;
+ const XS=[[40,200],[40,100,190,400,470,520],[40,100,380,450],[40,100,250,350,430,500],[40,250,310,390,470],[40,100,360,410,460]];
+ tx(hx,"Rapport d’activité",1,16,790);tx(hx,C.n,1,12,772);tx(hx,[C.p+" "+C.r,C.v+", "+C.c,C.t||""].filter(Boolean).join(" - "),0,9,756);
+ T.forEach((t,i)=>{nl(24);tx(40,t[0],1,12);t[1].forEach((r,k)=>{nl(13);r.forEach((c,j)=>tx(XS[i][j],String(fm(c)).slice(0,Math.floor(((XS[i][j+1]||575)-XS[i][j])/4.6)),i>0&&k==0))})});
+ const img=C.logo?atob(C.logo.split(",")[1]):null,w=img?Math.round(56*C.lw/C.lh):0,ps=(s)=>s.replace(/[^\x00-\xff]/g,c=>c=="\u2019"?"'":" ").replace(/[\\()]/g,"\\$&"),O=[];
+ O[1]="<< /Type /Catalog /Pages 2 0 R >>";O[2]="<< /Type /Pages /Count "+pg.length+" /Kids ["+pg.map((_,i)=>(7+2*i)+" 0 R").join(" ")+"] >>";
+ O[3]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";O[4]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
+ O[5]=img?"<< /Type /XObject /Subtype /Image /Width "+C.lw+" /Height "+C.lh+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+img.length+" >>\nstream\n"+img+"\nendstream":"<< >>";
+ pg.forEach((g,i)=>{const s=(i==0&&img?"q "+w+" 0 0 56 40 748 cm /Im1 Do Q\n":"")+g.map(t=>"BT /F"+(t[3]?2:1)+" "+t[4]+" Tf "+t[0]+" "+t[1]+" Td ("+ps(String(t[2]))+") Tj ET").join("\n");
+  O[6+2*i]="<< /Length "+s.length+" >>\nstream\n"+s+"\nendstream";
+  O[7+2*i]="<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /XObject << /Im1 5 0 R >> >> /Contents "+(6+2*i)+" 0 R >>"});
+ let o="%PDF-1.4\n";const xr=[];for(let i=1;i<O.length;i++){xr[i]=o.length;o+=i+" 0 obj\n"+O[i]+"\nendobj\n"}
+ const sx=o.length;o+="xref\n0 "+O.length+"\n0000000000 65535 f \n"+xr.slice(1).map(x=>String(x).padStart(10,"0")+" 00000 n \n").join("")+"trailer\n<< /Size "+O.length+" /Root 1 0 R >>\nstartxref\n"+sx+"\n%%EOF";
+ const u=new Uint8Array(o.length);for(let i=0;i<o.length;i++)u[i]=o.charCodeAt(i)&255;
+ out("rapport-"+stamp()+".pdf","application/pdf",u)}
+async function out(name,mime,u){const C=window.Capacitor,P=C&&C.Plugins;
+ try{if(C&&C.isNativePlatform&&C.isNativePlatform()&&P&&P.Filesystem&&P.Share){let b="";for(let i=0;i<u.length;i+=8192)b+=String.fromCharCode.apply(null,u.subarray(i,i+8192));
+  const r=await P.Filesystem.writeFile({path:name,data:btoa(b),directory:"CACHE"});await P.Share.share({title:name,url:r.uri,dialogTitle:"Enregistrer ou envoyer le fichier"});msg="Fichier prêt : "+name;return render()}}
+ catch(e){msg="Partage impossible : "+(e&&e.message||e);return render()}
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([u],{type:mime}));a.download=name;document.body.appendChild(a);a.click();a.remove();msg="Fichier créé : "+name+" (voir vos téléchargements).";render()}
 function sub(id){if(cart[id]>1)cart[id]--;else delete cart[id];render()}
 function tot(){return Object.keys(cart).reduce((a,id)=>a+cart[id]*D.p.find(p=>p.id==id).p,0)}
 function sell(){
  const ids=Object.keys(cart);if(!ids.length){msg="Choisissez au moins un produit.";return render()}
  if(pay=="cr"&&!cl.trim()){msg="Entrez le nom du client pour une vente à crédit.";return render()}
- const items=ids.map(id=>{const p=D.p.find(x=>x.id==id);if(p.s!==null&&p.s!==undefined)p.s=Math.max(0,p.s-cart[id]);return{n:p.n,q:cart[id],p:p.p,c:p.c}});
+ const bad=ids.map(id=>D.p.find(x=>x.id==id)).find(p=>p.s!=null&&cart[p.id]>p.s);
+ if(bad){msg="Stock insuffisant : "+bad.n+" (reste "+bad.s+" "+bad.u+")";return render()}
+ const items=ids.map(id=>{const p=D.p.find(x=>x.id==id);if(p.s!=null)p.s=Math.round((p.s-cart[id])*1000)/1000;return{n:p.n,q:cart[id],p:p.p,c:p.c,u:p.u}});
  const T=tot(),t=Date.now();
  D.s.push({id:D.n++,t,items,tot:T,pay,client:cl.trim()});
  D.j.push({t,l:"Vente"+(cl?" - "+cl.trim():""),d:PY[pay][1],c:"701",m:T});
@@ -97,22 +177,22 @@ function pay1(id){
 function wa(c){let n=(c.phone||"").replace(/\D/g,"");if(n.length==8)n="226"+n;
  const m=encodeURIComponent("Bonjour "+c.client+", petit rappel : votre solde est de "+F(rest(c))+" chez "+D.shop+". Merci.");
  return "https://wa.me/"+n+"?text="+m}
-function pe(id,k,v){const p=D.p.find(x=>x.id==id);p[k]=(k=="n")?v:(v===""?null:parseFloat(v)||0);save()}
-function addp(){D.p.push({id:D.n++,n:"Nouveau produit",p:0,c:0,s:null});save();render()}
+function pe(id,k,v){const p=D.p.find(x=>x.id==id);p[k]=(k=="n"||k=="u")?v:(v===""?null:parseFloat(v)||0);save()}
+function addp(){D.p.push({id:D.n++,n:"Nouveau produit",u:"unité",p:0,c:0,s:null});save();render()}
 function delp(id){D.p=D.p.filter(x=>x.id!=id);cart={};save();render()}
 function V(){
  const t0=d0(),td=D.s.filter(s=>s.t>=t0),st=D.p.filter(p=>p.s!=null&&p.s<=5).length;
  const ts=td.reduce((a,s)=>a+s.tot,0),te=D.e.filter(e=>e.t>=t0).reduce((a,e)=>a+e.a,0);
  const dt=D.cr.reduce((a,c)=>a+rest(c),0),nd=D.cr.filter(c=>rest(c)>0).length,late=D.cr.filter(c=>rest(c)>0&&Date.now()-c.t>7*864e5).length;
- return `<h1>${esc(D.shop)}</h1>${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}
+ return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">${D.co.logo?`<img src="${D.co.logo}" alt="Logo" style="width:44px;height:44px;border-radius:10px;object-fit:cover">`:""}<div><h1 style="margin:0">${esc(D.co.n)}</h1><div class="mu">${esc(D.co.v)}${D.co.q?" - "+esc(D.co.q):""}</div></div></div>${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}
  <div class="g"><div class="m"><small>Ventes du jour</small><b>${F(ts)}</b></div><div class="m"><small>Bénéfice du jour</small><b>${F(td.reduce((a,s)=>a+mg(s),0)-te)}</b></div>
  <div class="m"><small>Dettes à recevoir</small><b style="color:${nd?"var(--rd)":"inherit"}">${F(dt)}</b><small>${late} à relancer</small></div><div class="m"><small>Stock bas</small><b style="color:${st?"var(--am)":"inherit"}">${st} produit(s)</b></div></div>
  <button class="pb" onclick="go('sell')">Nouvelle vente</button><button class="sb" onclick="go('exp')">Enregistrer une dépense</button>${D.s.length?`<button class="sb" style="border-color:var(--bd);color:var(--mu)" onclick="undo()">Annuler la dernière vente</button>`:""}
  <p class="mu">Pour installer l’application : menu du navigateur, puis « Ajouter à l’écran d’accueil ». Vos données restent dans ce téléphone.</p>`}
 function S(){
  const T=tot(),ids=Object.keys(cart);
- return `<h1>Nouvelle vente</h1><div class="cd" style="margin-bottom:10px"><div style="display:flex;gap:6px"><input id="qk" placeholder="Dites ou tapez : 3 ciment, 2 fer" style="margin:0"><button class="c on" onclick="quick()">Ajouter</button></div><div style="margin-top:8px;display:flex;gap:8px;align-items:center"><button class="c" id="mic" onclick="dict()">Parler</button><span class="mu">Ou touchez le micro de votre clavier.</span></div></div><div class="g">${D.p.map(p=>`<button class="t" onclick="add(${p.id})">${cart[p.id]?`<i>${cart[p.id]}</i>`:""}${esc(p.n)}<small>${F(p.p)}</small></button>`).join("")}</div>
- ${ids.map(id=>{const p=D.p.find(x=>x.id==id);return `<div class="r"><span>${esc(p.n)}</span><span class="q"><button onclick="sub(${id})">-</button> ${cart[id]} <button onclick="add(${id})">+</button></span><b>${F(cart[id]*p.p)}</b></div>`}).join("")}
+ return `<h1>Nouvelle vente</h1><div class="cd" style="margin-bottom:10px"><div style="display:flex;gap:6px"><input id="qk" placeholder="Dites ou tapez : 3 ciment, 2 fer" style="margin:0"><button class="c on" onclick="quick()">Ajouter</button></div><div style="margin-top:8px;display:flex;gap:8px;align-items:center"><button class="c" id="mic" onclick="dict()">Parler</button><span class="mu">Ou touchez le micro de votre clavier.</span></div></div><div class="g">${D.p.map(p=>`<button class="t" style="${p.s!=null&&p.s<=0?"opacity:.45":""}" onclick="add(${p.id})">${cart[p.id]?`<i>${cart[p.id]}</i>`:""}${esc(p.n)}<small>${F(p.p)} / ${esc(p.u)}</small><small>${p.s!=null?(p.s<=0?"Épuisé":"Stock : "+p.s):""}</small></button>`).join("")}</div>
+ ${ids.map(id=>{const p=D.p.find(x=>x.id==id);return `<div class="r"><span>${esc(p.n)}</span><span class="q"><button onclick="sub(${id})">-</button><input type="number" step="any" min="0" value="${cart[id]}" onchange="setq(${id},this.value)" style="width:64px;margin:0 4px;padding:6px;text-align:center">${esc(p.u)} <button onclick="add(${id})">+</button></span><b>${F(cart[id]*p.p)}</b></div>`}).join("")}
  <div class="r"><b>Total</b><b style="font-size:20px">${F(T)}</b></div>
  <div class="ch">${Object.keys(PY).map(k=>`<button class="c ${pay==k?"on":""}" onclick="pay='${k}';render()">${PY[k][0]}</button>`).join("")}</div>
  ${pay=="cr"?`<input placeholder="Nom du client" value="${esc(cl)}" oninput="cl=this.value"><input placeholder="Téléphone (pour le rappel WhatsApp)" inputmode="tel" value="${esc(ph)}" oninput="ph=this.value">`:""}
@@ -146,16 +226,18 @@ function R(){
  <h2>Journal (comptes SYSCOHADA)</h2><p class="mu">Écritures générées automatiquement. À faire valider par un comptable.</p>
  ${D.j.slice(-12).reverse().map(j=>`<div class="r"><span>${esc(j.l)}<br><small class="mu">${new Date(j.t).toLocaleDateString("fr-FR")} - D ${j.d} / C ${j.c}</small></span><b>${F(j.m)}</b></div>`).join("")||`<p class="mu">Aucune écriture pour le moment.</p>`}`}
 function Pr(){
- return `<h1>Produits et boutique</h1>${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}<label class="mu">Nom de la boutique</label><input value="${esc(D.shop)}" onchange="D.shop=this.value;save()">
+ return `<h1>Produits et boutique</h1>${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}<button class="sb" onclick="editco()">Modifier les informations de l’entreprise</button>
  <h2>Produits</h2><p class="mu">Nom, prix de vente, prix d’achat, stock (vide = non suivi).</p>
- ${D.p.map(p=>`<div class="cd" style="margin-bottom:8px"><input value="${esc(p.n)}" onchange="pe(${p.id},'n',this.value)"><div class="sm" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+ ${D.p.map(p=>`<div class="cd" style="margin-bottom:8px"><input value="${esc(p.n)}" onchange="pe(${p.id},'n',this.value)"><select onchange="pe(${p.id},'u',this.value)">${UN.map(u=>`<option ${p.u==u?"selected":""}>${u}</option>`).join("")}</select><p class="mu" style="margin:4px 0">Prix de vente / Prix d’achat / Stock (en ${esc(p.u)})</p><div class="sm" style="grid-template-columns:repeat(3,minmax(0,1fr))">
  <input type="number" inputmode="decimal" value="${p.p}" onchange="pe(${p.id},'p',this.value)" aria-label="Prix de vente"><input type="number" inputmode="decimal" value="${p.c}" onchange="pe(${p.id},'c',this.value)" aria-label="Prix d’achat"><input type="number" inputmode="decimal" value="${p.s??""}" onchange="pe(${p.id},'s',this.value)" aria-label="Stock"></div>
  <button class="c" onclick="delp(${p.id})">Supprimer</button></div>`).join("")}
  <button class="sb" onclick="addp()">Ajouter un produit</button><h2>Sauvegarde</h2><p class="mu">Copiez vos données pour les garder ou les passer sur un autre téléphone.</p><button class="sb" onclick="bk()">Créer la sauvegarde</button><textarea id="bt" rows="4" placeholder="Collez ici une sauvegarde pour restaurer">${esc(bkv)}</textarea><button class="sb" onclick="rs()">Restaurer depuis le texte</button><h2>Zone sensible</h2>
  <button class="sb" style="color:var(--rd);border-color:var(--rd)" onclick="if(wipe){D=null;try{localStorage.removeItem(K)}catch(e){}location.reload()}else{wipe=true;render()}">${wipe?"Confirmer : tout effacer":"Effacer toutes les données"}</button>`}
 function render(){
- $("#app").innerHTML={home:V,sell:S,exp:X,debts:Dt,sum:R,prod:Pr}[tab]();
- const m=[["home","Accueil"],["sell","Vente"],["debts","Dettes"],["sum","Résumé"],["prod","Produits"]];
+ if(!D.co&&tab!="setup"){tab="setup";if(!cf.c)cf={c:"Burkina Faso"}}
+ $("#app").innerHTML={home:V,sell:S,exp:X,debts:Dt,sum:R,prod:Pr,setup:Se,out:Ex}[tab]();
+ const m=[["home","Accueil"],["sell","Vente"],["debts","Dettes"],["sum","Résumé"],["prod","Produits"],["out","Export"]];
+ $("#nav").style.display=D.co?"flex":"none";
  $("#nav").innerHTML=m.map(x=>`<button class="${tab==x[0]||(tab=="exp"&&x[0]=="home")?"on":""}" onclick="go('${x[0]}')">${x[1]}</button>`).join("")}
 render();
 </script></body></html>
