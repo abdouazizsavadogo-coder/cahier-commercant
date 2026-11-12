@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>Cahier du commerçant</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F6E56">
+<style>
+:root{color-scheme:light dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);--bg:#f7f6f2;--cd:#fff;--tx:#1f1f1c;--mu:#6b6a64;--bd:#e3e1d8;--ac:#0F6E56;--ab:#E1F5EE;--on:#fff;--rd:#A32D2D;--am:#854F0B}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1b1b19;--cd:#262624;--tx:#f1efe8;--mu:#a8a69c;--bd:#3a3a37;--ac:#5DCAA5;--ab:#04342C;--on:#04342C;--rd:#F09595;--am:#EF9F27}}
+:root[data-theme="dark"]{--bg:#1b1b19;--cd:#262624;--tx:#f1efe8;--mu:#a8a69c;--bd:#3a3a37;--ac:#5DCAA5;--ab:#04342C;--on:#04342C;--rd:#F09595;--am:#EF9F27}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:14px 14px 90px}
+h1{font-size:20px;margin:0 0 12px;font-weight:600}h2{font-size:16px;margin:18px 0 8px;font-weight:600}
+.g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.m,.cd{background:var(--cd);border:1px solid var(--bd);border-radius:12px;padding:12px}
+.m small{display:block;color:var(--mu);font-size:12px}.m b{font-size:18px}
+.mu{color:var(--mu);font-size:13px}.er{color:var(--rd);font-size:14px;margin:6px 0}
+button{font:inherit;cursor:pointer}
+.pb,.sb{width:100%;padding:14px;border-radius:12px;font-weight:600;margin-bottom:8px;border:1px solid var(--ac)}
+.pb{background:var(--ac);color:var(--on)}.sb{background:transparent;color:var(--ac)}
+.t{background:var(--cd);color:var(--tx);border:1px solid var(--bd);border-radius:12px;padding:12px 6px;text-align:center;position:relative}
+.t small{display:block;color:var(--mu);font-size:12px}
+.t i{position:absolute;top:-6px;right:-4px;background:var(--ac);color:var(--on);font-style:normal;font-size:12px;border-radius:10px;padding:0 7px}
+.ch{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.c{border:1px solid var(--bd);background:var(--cd);color:var(--tx);border-radius:20px;padding:7px 12px;font-size:14px}
+.c.on{background:var(--ab);border-color:var(--ac);color:var(--ac)}
+input,select,textarea{font:inherit;width:100%;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--cd);color:var(--tx);margin:4px 0}
+.r{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--bd);font-size:14px}
+.q button{width:32px;height:32px;border-radius:16px;border:1px solid var(--bd);background:var(--cd);color:var(--tx)}
+.bar{display:flex;align-items:flex-end;gap:6px;height:80px;margin:8px 0 2px}.bar div{flex:1;background:var(--ab);border-radius:4px;min-height:3px}
+.lb{display:flex;gap:6px;font-size:11px;color:var(--mu)}.lb span{flex:1;text-align:center}
+a.w{color:var(--ac);font-size:13px;text-decoration:none;border:1px solid var(--ac);border-radius:16px;padding:4px 10px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--cd);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;border:0;background:none;color:var(--mu);padding:14px 2px;font-size:12px}nav button.on{color:var(--ac);font-weight:700}
+.sm{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px}
+</style></head><body>
+<div id="app"></div><nav id="nav"></nav>
+<script>
+const K="cahier-commercant-v1";let D=null;
+try{D=JSON.parse(localStorage.getItem(K))}catch(e){}
+if(!D)D={shop:"Ma boutique",n:10,p:[{id:1,n:"Ciment",p:5000,c:4200,s:40},{id:2,n:"Fer 8 mm",p:4500,c:3800,s:25},{id:3,n:"Pointes (kg)",p:1200,c:900,s:50},{id:4,n:"Peinture",p:8000,c:6500,s:12}],s:[],e:[],cr:[],j:[]};
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(D))}catch(e){}};
+const $=s=>document.querySelector(s),F=n=>Math.round(n).toLocaleString("fr-FR")+" F";
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const PY={cash:["Espèces","571"],om:["Orange Money","585"],mm:["Moov Money","585"],cr:["À crédit","411"]};
+const CT={"605":"Eau, électricité, fournitures","61":"Transport","622":"Loyer","66":"Salaires","658":"Autres charges"};
+let tab="home",cart={},pay="cash",cl="",ph="",msg="",ex={a:"",l:"",c:"605",m:"cash"},wipe=false;
+const dk=t=>new Date(t).toDateString(),d0=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
+const mg=s=>s.items.reduce((a,i)=>a+(i.p-i.c)*i.q,0);
+const rest=c=>c.amt-c.paid;
+function go(t){tab=t;msg="";wipe=false;render();scrollTo(0,0)}
+let bkv="";
+const NB={un:1,une:1,deux:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,douze:12,quinze:15,vingt:20};
+const norm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+function parseQ(txt){
+ const bad=[];let ok=0;
+ norm(txt).split(/,|;|\bet\b|\bplus\b/).forEach(x=>{x=x.trim();if(!x)return;
+  let q=1;const m=x.match(/\d+/);
+  if(m){q=+m[0];x=x.replace(m[0],"")}else{for(const w in NB){const re=new RegExp("\\b"+w+"\\b");if(re.test(x)){q=NB[w];x=x.replace(re,"");break}}}
+  x=x.replace(/\b(sac|sacs|de|du|des|d)\b/g," ").replace(/\s+/g," ").trim();
+  const p=x&&D.p.find(p=>{const n=norm(p.n);return n.includes(x)||x.includes(n.split(" ")[0])});
+  if(p){cart[p.id]=(cart[p.id]||0)+q;ok++}else if(x)bad.push(x)});
+ return{ok,bad}}
+function quick(){const r=parseQ($("#qk").value);msg=r.bad.length?"Produit introuvable : "+r.bad.join(", "):(r.ok?"":"Je n’ai pas compris. Exemple : 3 ciment, 2 fer");render()}
+function dict(){const R=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(!R){msg="Dictée indisponible ici : touchez le micro de votre clavier.";return render()}
+ const r=new R();r.lang="fr-FR";r.onresult=e=>{$("#qk").value=e.results[0][0].transcript;quick()};
+ r.onerror=()=>{msg="Dictée impossible. Utilisez le micro du clavier.";render()};
+ try{r.start();$("#mic").textContent="J’écoute…"}catch(e){}}
+function sms(c){return "sms:"+(c.phone||"").replace(/\s/g,"")+"?body="+encodeURIComponent("Bonjour "+c.client+", petit rappel : votre solde est de "+F(rest(c))+" chez "+D.shop+". Merci.")}
+function undo(){const s=D.s[D.s.length-1];if(!s)return;
+ if(D.cr.find(c=>c.t==s.t&&c.paid>0)){msg="Annulation impossible : un paiement a déjà été encaissé sur cette vente.";return render()}
+ D.s.pop();s.items.forEach(i=>{const p=D.p.find(x=>x.n==i.n);if(p&&p.s!=null)p.s+=i.q});
+ D.j=D.j.filter(j=>j.t!=s.t);D.cr=D.cr.filter(c=>c.t!=s.t);save();msg="Dernière vente annulée.";render()}
+function bk(){bkv=JSON.stringify(D);try{navigator.clipboard.writeText(bkv)}catch(e){}msg="Sauvegarde prête : copiez le texte ci-dessous et gardez-le (note ou message WhatsApp à vous-même).";render()}
+function rs(){try{const o=JSON.parse($("#bt").value);if(!o||!Array.isArray(o.p)||!Array.isArray(o.s))throw 0;D=o;save();bkv="";msg="Données restaurées."}catch(e){msg="Texte de sauvegarde invalide."}render()}
+function add(id){cart[id]=(cart[id]||0)+1;msg="";render()}
+function sub(id){if(cart[id]>1)cart[id]--;else delete cart[id];render()}
+function tot(){return Object.keys(cart).reduce((a,id)=>a+cart[id]*D.p.find(p=>p.id==id).p,0)}
+function sell(){
+ const ids=Object.keys(cart);if(!ids.length){msg="Choisissez au moins un produit.";return render()}
+ if(pay=="cr"&&!cl.trim()){msg="Entrez le nom du client pour une vente à crédit.";return render()}
+ const items=ids.map(id=>{const p=D.p.find(x=>x.id==id);if(p.s!==null&&p.s!==undefined)p.s=Math.max(0,p.s-cart[id]);return{n:p.n,q:cart[id],p:p.p,c:p.c}});
+ const T=tot(),t=Date.now();
+ D.s.push({id:D.n++,t,items,tot:T,pay,client:cl.trim()});
+ D.j.push({t,l:"Vente"+(cl?" - "+cl.trim():""),d:PY[pay][1],c:"701",m:T});
+ if(pay=="cr")D.cr.push({id:D.n++,t,client:cl.trim(),phone:ph,amt:T,paid:0});
+ save();cart={};cl="";ph="";pay="cash";msg="Vente enregistrée : "+F(T);tab="home";render()}
+function spend(){
+ const a=parseFloat(ex.a);if(!(a>0)){msg="Entrez un montant valide.";return render()}
+ const t=Date.now();D.e.push({t,a,l:ex.l.trim()||CT[ex.c],c:ex.c});
+ D.j.push({t,l:"Dépense : "+(ex.l.trim()||CT[ex.c]),d:ex.c,c:PY[ex.m][1],m:a});
+ save();ex={a:"",l:"",c:"605",m:"cash"};msg="Dépense enregistrée.";tab="home";render()}
+function pay1(id){
+ const c=D.cr.find(x=>x.id==id),v=parseFloat($("#pv"+id).value);
+ if(!(v>0)){msg="Entrez le montant reçu.";return render()}
+ const a=Math.min(v,rest(c));c.paid+=a;D.j.push({t:Date.now(),l:"Encaissement - "+c.client,d:"571",c:"411",m:a});
+ save();msg="Encaissé : "+F(a);render()}
+function wa(c){let n=(c.phone||"").replace(/\D/g,"");if(n.length==8)n="226"+n;
+ const m=encodeURIComponent("Bonjour "+c.client+", petit rappel : votre solde est de "+F(rest(c))+" chez "+D.shop+". Merci.");
+ return "https://wa.me/"+n+"?text="+m}
+function pe(id,k,v){const p=D.p.find(x=>x.id==id);p[k]=(k=="n")?v:(v===""?null:parseFloat(v)||0);save()}
+function addp(){D.p.push({id:D.n++,n:"Nouveau produit",p:0,c:0,s:null});save();render()}
+function delp(id){D.p=D.p.filter(x=>x.id!=id);cart={};save();render()}
+function V(){
+ const t0=d0(),td=D.s.filter(s=>s.t>=t0),st=D.p.filter(p=>p.s!=null&&p.s<=5).length;
+ const ts=td.reduce((a,s)=>a+s.tot,0),te=D.e.filter(e=>e.t>=t0).reduce((a,e)=>a+e.a,0);
+ const dt=D.cr.reduce((a,c)=>a+rest(c),0),nd=D.cr.filter(c=>rest(c)>0).length,late=D.cr.filter(c=>rest(c)>0&&Date.now()-c.t>7*864e5).length;
+ return `<h1>${esc(D.shop)}</h1>${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}
+ <div class="g"><div class="m"><small>Ventes du jour</small><b>${F(ts)}</b></div><div class="m"><small>Bénéfice du jour</small><b>${F(td.reduce((a,s)=>a+mg(s),0)-te)}</b></div>
+ <div class="m"><small>Dettes à recevoir</small><b style="color:${nd?"var(--rd)":"inherit"}">${F(dt)}</b><small>${late} à relancer</small></div><div class="m"><small>Stock bas</small><b style="color:${st?"var(--am)":"inherit"}">${st} produit(s)</b></div></div>
+ <button class="pb" onclick="go('sell')">Nouvelle vente</button><button class="sb" onclick="go('exp')">Enregistrer une dépense</button>${D.s.length?`<button class="sb" style="border-color:var(--bd);color:var(--mu)" onclick="undo()">Annuler la dernière vente</button>`:""}
+ <p class="mu">Pour installer l’application : menu du navigateur, puis « Ajouter à l’écran d’accueil ». Vos données restent dans ce téléphone.</p>`}
+function S(){
+ const T=tot(),ids=Object.keys(cart);
+ return `<h1>Nouvelle vente</h1><div class="cd" style="margin-bottom:10px"><div style="display:flex;gap:6px"><input id="qk" placeholder="Dites ou tapez : 3 ciment, 2 fer" style="margin:0"><button class="c on" onclick="quick()">Ajouter</button></div><div style="margin-top:8px;display:flex;gap:8px;align-items:center"><button class="c" id="mic" onclick="dict()">Parler</button><span class="mu">Ou touchez le micro de votre clavier.</span></div></div><div class="g">${D.p.map(p=>`<button class="t" onclick="add(${p.id})">${cart[p.id]?`<i>${cart[p.id]}</i>`:""}${esc(p.n)}<small>${F(p.p)}</small></button>`).join("")}</div>
+ ${ids.map(id=>{const p=D.p.find(x=>x.id==id);return `<div class="r"><span>${esc(p.n)}</span><span class="q"><button onclick="sub(${id})">-</button> ${cart[id]} <button onclick="add(${id})">+</button></span><b>${F(cart[id]*p.p)}</b></div>`}).join("")}
+ <div class="r"><b>Total</b><b style="font-size:20px">${F(T)}</b></div>
+ <div class="ch">${Object.keys(PY).map(k=>`<button class="c ${pay==k?"on":""}" onclick="pay='${k}';render()">${PY[k][0]}</button>`).join("")}</div>
+ ${pay=="cr"?`<input placeholder="Nom du client" value="${esc(cl)}" oninput="cl=this.value"><input placeholder="Téléphone (pour le rappel WhatsApp)" inputmode="tel" value="${esc(ph)}" oninput="ph=this.value">`:""}
+ ${msg?`<p class="er">${esc(msg)}</p>`:""}<button class="pb" onclick="sell()">Valider la vente</button>`}
+function X(){
+ return `<h1>Nouvelle dépense</h1><input type="number" inputmode="decimal" placeholder="Montant en FCFA" value="${esc(ex.a)}" oninput="ex.a=this.value">
+ <input placeholder="Détail (facultatif)" value="${esc(ex.l)}" oninput="ex.l=this.value">
+ <select onchange="ex.c=this.value">${Object.keys(CT).map(k=>`<option value="${k}" ${ex.c==k?"selected":""}>${CT[k]}</option>`).join("")}</select>
+ <div class="ch">${["cash","om","mm"].map(k=>`<button class="c ${ex.m==k?"on":""}" onclick="ex.m='${k}';render()">${PY[k][0]}</button>`).join("")}</div>
+ ${msg?`<p class="er">${esc(msg)}</p>`:""}<button class="pb" onclick="spend()">Enregistrer</button><button class="sb" onclick="go('home')">Annuler</button>`}
+function Dt(){
+ const L=D.cr.filter(c=>rest(c)>0).sort((a,b)=>a.t-b.t),T=L.reduce((a,c)=>a+rest(c),0);
+ return `<h1>Carnet de dettes</h1><div class="m" style="margin-bottom:10px"><small>Total à recevoir</small><b style="font-size:24px">${F(T)}</b></div>
+ ${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}
+ ${L.length?L.map(c=>{const j=Math.floor((Date.now()-c.t)/864e5);return `<div class="cd" style="margin-bottom:8px"><div class="r" style="border:0;padding:0"><b>${esc(c.client)}</b><b>${F(rest(c))}</b></div>
+ <div class="mu" style="${j>7?"color:var(--rd)":""}">Depuis ${j} jour(s)${c.paid?" - déjà payé "+F(c.paid):""}</div>
+ <div style="display:flex;gap:6px;margin-top:8px"><input id="pv${c.id}" type="number" inputmode="decimal" placeholder="Montant reçu" style="margin:0"><button class="c on" onclick="pay1(${c.id})">Encaisser</button></div>
+ <p style="margin:8px 0 0"><a class="w" href="${wa(c)}" target="_blank" rel="noopener">Relancer par WhatsApp</a> <a class="w" href="${sms(c)}">SMS</a></p></div>`}).join(""):`<p class="mu">Aucune dette en cours. Les ventes à crédit apparaîtront ici.</p>`}`}
+function R(){
+ const t0=d0(),w0=t0-6*864e5,ws=D.s.filter(s=>s.t>=w0),we=D.e.filter(e=>e.t>=w0);
+ const sales=ws.reduce((a,s)=>a+s.tot,0),exp=we.reduce((a,e)=>a+e.a,0),gain=ws.reduce((a,s)=>a+mg(s),0)-exp;
+ const days=[...Array(7)].map((_,i)=>{const a=w0+i*864e5;return{d:new Date(a),v:D.s.filter(s=>s.t>=a&&s.t<a+864e5).reduce((x,s)=>x+s.tot,0)}});
+ const mx=Math.max(1,...days.map(x=>x.v)),q={};ws.forEach(s=>s.items.forEach(i=>q[i.n]=(q[i.n]||0)+i.q));
+ const top=Object.keys(q).sort((a,b)=>q[b]-q[a])[0];
+ return `<h1>Résumé de la semaine</h1><p class="mu" style="margin:0">Cette semaine, votre gain estimé est de</p>
+ <p style="font-size:28px;font-weight:700;margin:0 0 8px;color:${gain<0?"var(--rd)":"var(--ac)"}">${F(gain)}</p>
+ <div class="bar">${days.map(x=>`<div style="height:${Math.round(x.v/mx*100)}%"></div>`).join("")}</div>
+ <div class="lb">${days.map(x=>`<span>${"DLMMJVS"[x.d.getDay()]}</span>`).join("")}</div>
+ <div class="g" style="margin-top:12px"><div class="m"><small>Ventes</small><b>${F(sales)}</b></div><div class="m"><small>Dépenses</small><b>${F(exp)}</b></div></div>
+ <div class="r"><span>Produit le plus vendu</span><b>${top?esc(top)+" ("+q[top]+")":"-"}</b></div>
+ <h2>Journal (comptes SYSCOHADA)</h2><p class="mu">Écritures générées automatiquement. À faire valider par un comptable.</p>
+ ${D.j.slice(-12).reverse().map(j=>`<div class="r"><span>${esc(j.l)}<br><small class="mu">${new Date(j.t).toLocaleDateString("fr-FR")} - D ${j.d} / C ${j.c}</small></span><b>${F(j.m)}</b></div>`).join("")||`<p class="mu">Aucune écriture pour le moment.</p>`}`}
+function Pr(){
+ return `<h1>Produits et boutique</h1>${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}<label class="mu">Nom de la boutique</label><input value="${esc(D.shop)}" onchange="D.shop=this.value;save()">
+ <h2>Produits</h2><p class="mu">Nom, prix de vente, prix d’achat, stock (vide = non suivi).</p>
+ ${D.p.map(p=>`<div class="cd" style="margin-bottom:8px"><input value="${esc(p.n)}" onchange="pe(${p.id},'n',this.value)"><div class="sm" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+ <input type="number" inputmode="decimal" value="${p.p}" onchange="pe(${p.id},'p',this.value)" aria-label="Prix de vente"><input type="number" inputmode="decimal" value="${p.c}" onchange="pe(${p.id},'c',this.value)" aria-label="Prix d’achat"><input type="number" inputmode="decimal" value="${p.s??""}" onchange="pe(${p.id},'s',this.value)" aria-label="Stock"></div>
+ <button class="c" onclick="delp(${p.id})">Supprimer</button></div>`).join("")}
+ <button class="sb" onclick="addp()">Ajouter un produit</button><h2>Sauvegarde</h2><p class="mu">Copiez vos données pour les garder ou les passer sur un autre téléphone.</p><button class="sb" onclick="bk()">Créer la sauvegarde</button><textarea id="bt" rows="4" placeholder="Collez ici une sauvegarde pour restaurer">${esc(bkv)}</textarea><button class="sb" onclick="rs()">Restaurer depuis le texte</button><h2>Zone sensible</h2>
+ <button class="sb" style="color:var(--rd);border-color:var(--rd)" onclick="if(wipe){D=null;try{localStorage.removeItem(K)}catch(e){}location.reload()}else{wipe=true;render()}">${wipe?"Confirmer : tout effacer":"Effacer toutes les données"}</button>`}
+function render(){
+ $("#app").innerHTML={home:V,sell:S,exp:X,debts:Dt,sum:R,prod:Pr}[tab]();
+ const m=[["home","Accueil"],["sell","Vente"],["debts","Dettes"],["sum","Résumé"],["prod","Produits"]];
+ $("#nav").innerHTML=m.map(x=>`<button class="${tab==x[0]||(tab=="exp"&&x[0]=="home")?"on":""}" onclick="go('${x[0]}')">${x[1]}</button>`).join("")}
+render();
+</script></body></html>
