@@ -29,20 +29,23 @@ input,select,textarea{font:inherit;width:100%;padding:10px;border-radius:10px;bo
 .lb{display:flex;gap:6px;font-size:11px;color:var(--mu)}.lb span{flex:1;text-align:center}
 a.w{color:var(--ac);font-size:13px;text-decoration:none;border:1px solid var(--ac);border-radius:16px;padding:4px 10px}
 nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--cd);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px)}
-nav button{flex:1;border:0;background:none;color:var(--mu);padding:14px 2px;font-size:12px}nav button.on{color:var(--ac);font-weight:700}
+nav{overflow-x:auto}nav button{flex:1 0 auto;border:0;background:none;color:var(--mu);padding:14px 12px;font-size:13px;white-space:nowrap}nav button.on{color:var(--ac);font-weight:700}
 .sm{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:4px}
 </style></head><body>
 <div id="app"></div><nav id="nav"></nav>
 <script>
 const K="cahier-commercant-v1";let D=null;
 try{D=JSON.parse(localStorage.getItem(K))}catch(e){}
-if(!D)D={shop:"Ma boutique",n:10,p:[{id:1,n:"Ciment",p:5000,c:4200,s:40},{id:2,n:"Fer 8 mm",p:4500,c:3800,s:25},{id:3,n:"Pointes (kg)",p:1200,c:900,s:50},{id:4,n:"Peinture",p:8000,c:6500,s:12}],s:[],e:[],cr:[],j:[]};D.p.forEach(p=>{if(!p.u)p.u=/\(kg\)/.test(p.n)?"kg":"unité"});
+if(!D)D={shop:"Ma boutique",n:10,p:[{id:1,n:"Ciment",p:5000,c:4200,s:40},{id:2,n:"Fer 8 mm",p:4500,c:3800,s:25},{id:3,n:"Pointes (kg)",p:1200,c:900,s:50},{id:4,n:"Peinture",p:8000,c:6500,s:12}],s:[],e:[],cr:[],j:[]};D.p.forEach(p=>{if(!p.u)p.u=/\(kg\)/.test(p.n)?"kg":"unité";if(p.a==null)p.a=5});
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(D))}catch(e){}};
 const $=s=>document.querySelector(s),F=n=>Math.round(n).toLocaleString("fr-FR")+" F";
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const PY={cash:["Espèces","571"],om:["Orange Money","585"],mm:["Moov Money","585"],cr:["À crédit","411"]};
-const CT={"605":"Eau, électricité, fournitures","61":"Transport","622":"Loyer","66":"Salaires","658":"Autres charges"};
-let tab="home",cart={},pay="cash",cl="",ph="",msg="",ex={a:"",l:"",c:"605",m:"cash"},wipe=false,cf={},xp=7;
+const CT={"605":"Eau, électricité, fournitures","61":"Transports","622":"Loyers et charges locatives","624":"Entretien et réparations","627":"Publicité","628":"Télécommunications","631":"Frais bancaires et mobile money","64":"Impôts et taxes","66":"Charges de personnel","658":"Autres charges"};
+const IV={"21":"Immobilisations incorporelles (logiciels)","22":"Terrains","23":"Bâtiments et aménagements","241":"Matériel et outillage","244":"Mobilier et matériel de bureau","245":"Matériel de transport"};
+const ACC=Object.assign({"571":"Caisse","585":"Monnaie électronique (mobile money)","411":"Clients","701":"Ventes de marchandises"},CT,IV);
+const REFA="SAVADOGO Abdou Aziz, Consultant gestionnaire comptable",REFB="Ouagadougou, Mob : +226 75 92 74 14",REF=REFA+", "+REFB;
+let tab="home",cart={},pay="cash",cl="",ph="",msg="",ex={a:"",l:"",c:"605",m:"cash",n:"E"},wipe=false,cf={},xp=7;
 const dk=t=>new Date(t).toDateString(),d0=()=>{const d=new Date();d.setHours(0,0,0,0);return d.getTime()};
 const mg=s=>s.items.reduce((a,i)=>a+(i.p-i.c)*i.q,0);
 const rest=c=>c.amt-c.paid;
@@ -95,21 +98,21 @@ function Se(){
  <label class="mu">Logo (facultatif)</label>${cf.logo?`<img src="${cf.logo}" alt="Logo" style="display:block;width:80px;height:80px;object-fit:cover;border-radius:12px;margin:6px 0">`:""}<input type="file" accept="image/*" onchange="logo(this)">
  ${msg?`<p class="er">${esc(msg)}</p>`:""}<button class="pb" style="margin-top:10px" onclick="saveco()">Enregistrer</button>${D.co?`<button class="sb" onclick="go('prod')">Annuler</button>`:""}`}
 const dd=t=>new Date(t).toLocaleDateString("fr-FR"),stamp=()=>new Date().toISOString().slice(0,10);
-function dat(){const a=xp?d0()-(xp-1)*864e5:0,f=x=>x.t>=a,s=D.s.filter(f),e=D.e.filter(f),j=D.j.filter(f);
- const rv=s.reduce((x,y)=>x+y.tot,0),ch=e.reduce((x,y)=>x+y.a,0);
- return{s,e,j,rv,ch,gain:s.reduce((x,y)=>x+mg(y),0)-ch,dt:D.cr.reduce((x,c)=>x+rest(c),0),lb:xp?"Derniers "+xp+" jours":"Toutes les données"}}
-function tabs(){const q=dat(),C=D.co,pl=k=>PY[k]?PY[k][0]:k,r=Math.round;
- return[["Résumé",[["Entreprise",C.n],["Responsable",C.p+" "+C.r],["Pays",C.c],["Ville",C.v],["Secteur / quartier",C.q||""],["Contact",C.t||""],["Période",q.lb],["Édité le",dd(Date.now())],["Ventes (FCFA)",r(q.rv)],["Dépenses (FCFA)",r(q.ch)],["Gain estimé (FCFA)",r(q.gain)],["Dettes à recevoir (FCFA)",r(q.dt)]]],
- ["Ventes",[["Date","Client","Détail","Paiement","Total","Marge"]].concat(q.s.map(s=>[dd(s.t),s.client||"",s.items.map(i=>i.q+" "+(i.u||"")+" "+i.n).join(", "),pl(s.pay),r(s.tot),r(mg(s))]))],
- ["Dépenses",[["Date","Libellé","Compte","Montant"]].concat(q.e.map(e=>[dd(e.t),e.l,e.c,r(e.a)]))],
+function tabs(){const a=pa(),g=cg(a),B=bal(a),r=Math.round,pl=k=>PY[k]?PY[k][0]:k,C=D.co,lb=xp?"Derniers "+xp+" jours":"Toutes les données",sm=k=>r(B.reduce((u,x)=>u+x[k],0)),ks=o=>Object.keys(o).sort(),dtt=D.cr.reduce((u,c)=>u+rest(c),0);
+ const cgr=[["Rubrique","Montant (FCFA)"],["PRODUITS",""],["701 Ventes de marchandises",r(g.rv)],["CHARGES",""],["601 Coût d’achat des marchandises vendues (calculé)",r(g.cogs)]].concat(ks(g.ch).map(k=>[k+" "+(ACC[k]||""),r(g.ch[k])]),[["Total des charges",r(g.cogs+g.cht)],["RÉSULTAT (produits - charges)",r(g.res)],["Pour information : marge brute",r(g.mb)],["INVESTISSEMENTS (non déduits du résultat)",""]],ks(g.inv).map(k=>[k+" "+(ACC[k]||""),r(g.inv[k])]),[["Total investissements",r(g.invt)]]);
+ return[["Résumé",[["Entreprise",C.n],["Responsable",C.p+" "+C.r],["Pays",C.c],["Ville",C.v],["Secteur / quartier",C.q||""],["Contact",C.t||""],["Période",lb],["Édité le",dd(Date.now())],["Ventes (FCFA)",r(g.rv)],["Charges (FCFA)",r(g.cogs+g.cht)],["Résultat (FCFA)",r(g.res)],["Investissements (FCFA)",r(g.invt)],["Dettes à recevoir (FCFA)",r(dtt)],["Statut","À faire valider par un comptable"],["Référence",REFA],["",REFB]]],
+ ["Compte de gestion",cgr],
+ ["Balance",[["Compte","Libellé","Débit","Crédit","Solde débiteur","Solde créditeur"]].concat(B.map(x=>[x.k,x.l,r(x.d),r(x.c),r(x.sd),r(x.sc)]),[["","TOTAL",sm("d"),sm("c"),sm("sd"),sm("sc")]])],
+ ["Ventes",[["Date","Client","Détail","Paiement","Total","Marge"]].concat(g.s.map(s=>[dd(s.t),s.client||"",s.items.map(i=>i.q+" "+(i.u||"")+" "+i.n).join(", "),pl(s.pay),r(s.tot),r(mg(s))]))],
+ ["Dépenses",[["Date","Libellé","Compte","Nature","Montant"]].concat(g.e.map(e=>[dd(e.t),e.l,e.c,e.n=="I"?"Investissement":"Exploitation",r(e.a)]))],
  ["Dettes",[["Date","Client","Téléphone","Montant","Payé","Reste"]].concat(D.cr.filter(c=>rest(c)>0).map(c=>[dd(c.t),c.client,c.phone||"",r(c.amt),r(c.paid),r(rest(c))]))],
- ["Stock",[["Produit","Unité","Prix vente","Prix achat","Stock"]].concat(D.p.map(p=>[p.n,p.u,p.p,p.c,p.s==null?"":p.s]))],
- ["Journal",[["Date","Libellé","Débit","Crédit","Montant"]].concat(q.j.map(j=>[dd(j.t),j.l,j.d,j.c,r(j.m)]))]]}
+ ["Stock",[["Produit","Unité","Prix vente","Prix achat","Stock","Seuil"]].concat(D.p.map(p=>[p.n,p.u,p.p,p.c,p.s==null?"":p.s,p.a==null?5:p.a]))],
+ ["Journal",[["Date","Libellé","Débit","Crédit","Montant"]].concat(D.j.filter(j=>j.t>=a).map(j=>[dd(j.t),j.l,j.d,j.c,r(j.m)]))]]}
 function Ex(){return `<h1>Export</h1><p class="mu">Choisissez la période, puis le format.</p>
  <div class="ch">${[[7,"7 jours"],[30,"30 jours"],[0,"Tout"]].map(x=>`<button class="c ${xp==x[0]?"on":""}" onclick="xp=${x[0]};render()">${x[1]}</button>`).join("")}</div>
  ${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}
  <button class="pb" onclick="xl()">Exporter en Excel (.xlsx)</button><button class="sb" onclick="pd()">Exporter en PDF</button>
- <p class="mu">Contenu : résumé de l’entreprise, ventes, dépenses, dettes, stock et journal comptable.</p>`}
+ <p class="mu">Contenu : résumé, compte de gestion, balance des comptes, ventes, dépenses, dettes, stock et journal. À faire valider par un comptable.</p>`}
 const CRT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
 const crc=u=>{let c=-1;for(let i=0;i<u.length;i++)c=CRT[(c^u[i])&255]^(c>>>8);return(c^-1)>>>0};
 function zip(files){const P=[],Z=[];let o=0;const le=(v,n)=>{const a=[];for(let i=0;i<n;i++)a.push((v>>>(8*i))&255);return a},E=new TextEncoder();
@@ -132,9 +135,10 @@ function xl(){const T=tabs(),H='<?xml version="1.0" encoding="UTF-8" standalone=
 function pd(){const T=tabs(),C=D.co,pg=[[]];let y=735;
  const nl=n=>{y-=n;if(y<50){pg.push([]);y=800}},tx=(x,s,b,z,yy)=>pg[pg.length-1].push([x,yy||y,s,b,z||9]);
  const fm=n=>typeof n=="number"?String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g," "):n,hx=C.logo?112:40;
- const XS=[[40,200],[40,100,190,400,470,520],[40,100,380,450],[40,100,250,350,430,500],[40,250,310,390,470],[40,100,360,410,460]];
+ const XS=[[40,200],[40,440],[40,85,260,330,400,470],[40,100,190,400,470,520],[40,100,330,400,490],[40,100,250,350,430,500],[40,230,290,360,430,500],[40,100,360,410,460]];
  tx(hx,"Rapport d’activité",1,16,790);tx(hx,C.n,1,12,772);tx(hx,[C.p+" "+C.r,C.v+", "+C.c,C.t||""].filter(Boolean).join(" - "),0,9,756);
  T.forEach((t,i)=>{nl(24);tx(40,t[0],1,12);t[1].forEach((r,k)=>{nl(13);r.forEach((c,j)=>tx(XS[i][j],String(fm(c)).slice(0,Math.floor(((XS[i][j+1]||575)-XS[i][j])/4.6)),i>0&&k==0))})});
+ pg.forEach(g=>g.push([40,28,"Document de gestion à valider par un comptable - "+REF,0,7]));
  const img=C.logo?atob(C.logo.split(",")[1]):null,w=img?Math.round(56*C.lw/C.lh):0,ps=(s)=>s.replace(/[^\x00-\xff]/g,c=>c=="\u2019"?"'":" ").replace(/[\\()]/g,"\\$&"),O=[];
  O[1]="<< /Type /Catalog /Pages 2 0 R >>";O[2]="<< /Type /Pages /Count "+pg.length+" /Kids ["+pg.map((_,i)=>(7+2*i)+" 0 R").join(" ")+"] >>";
  O[3]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>";O[4]="<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>";
@@ -164,11 +168,10 @@ function sell(){
  D.j.push({t,l:"Vente"+(cl?" - "+cl.trim():""),d:PY[pay][1],c:"701",m:T});
  if(pay=="cr")D.cr.push({id:D.n++,t,client:cl.trim(),phone:ph,amt:T,paid:0});
  save();cart={};cl="";ph="";pay="cash";msg="Vente enregistrée : "+F(T);tab="home";render()}
-function spend(){
- const a=parseFloat(ex.a);if(!(a>0)){msg="Entrez un montant valide.";return render()}
- const t=Date.now();D.e.push({t,a,l:ex.l.trim()||CT[ex.c],c:ex.c});
- D.j.push({t,l:"Dépense : "+(ex.l.trim()||CT[ex.c]),d:ex.c,c:PY[ex.m][1],m:a});
- save();ex={a:"",l:"",c:"605",m:"cash"};msg="Dépense enregistrée.";tab="home";render()}
+function spend(){const a=parseFloat(ex.a);if(!(a>0)){msg="Entrez un montant valide.";return render()}
+ const t=Date.now(),I=ex.n=="I",l=ex.l.trim()||(I?IV:CT)[ex.c];
+ D.e.push({t,a,l,c:ex.c,n:I?"I":"E",m:ex.m});D.j.push({t,l:(I?"Investissement : ":"Dépense : ")+l,d:ex.c,c:PY[ex.m][1],m:a});
+ save();ex={a:"",l:"",c:"605",m:"cash",n:"E"};msg=I?"Investissement enregistré.":"Dépense enregistrée.";tab="dep";render()}
 function pay1(id){
  const c=D.cr.find(x=>x.id==id),v=parseFloat($("#pv"+id).value);
  if(!(v>0)){msg="Entrez le montant reçu.";return render()}
@@ -178,16 +181,31 @@ function wa(c){let n=(c.phone||"").replace(/\D/g,"");if(n.length==8)n="226"+n;
  const m=encodeURIComponent("Bonjour "+c.client+", petit rappel : votre solde est de "+F(rest(c))+" chez "+D.shop+". Merci.");
  return "https://wa.me/"+n+"?text="+m}
 function pe(id,k,v){const p=D.p.find(x=>x.id==id);p[k]=(k=="n"||k=="u")?v:(v===""?null:parseFloat(v)||0);save()}
-function addp(){D.p.push({id:D.n++,n:"Nouveau produit",u:"unité",p:0,c:0,s:null});save();render()}
+function addp(){D.p.push({id:D.n++,n:"Nouveau produit",u:"unité",a:5,p:0,c:0,s:null});save();render()}
 function delp(id){D.p=D.p.filter(x=>x.id!=id);cart={};save();render()}
-function V(){
- const t0=d0(),td=D.s.filter(s=>s.t>=t0),st=D.p.filter(p=>p.s!=null&&p.s<=5).length;
- const ts=td.reduce((a,s)=>a+s.tot,0),te=D.e.filter(e=>e.t>=t0).reduce((a,e)=>a+e.a,0);
- const dt=D.cr.reduce((a,c)=>a+rest(c),0),nd=D.cr.filter(c=>rest(c)>0).length,late=D.cr.filter(c=>rest(c)>0&&Date.now()-c.t>7*864e5).length;
- return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">${D.co.logo?`<img src="${D.co.logo}" alt="Logo" style="width:44px;height:44px;border-radius:10px;object-fit:cover">`:""}<div><h1 style="margin:0">${esc(D.co.n)}</h1><div class="mu">${esc(D.co.v)}${D.co.q?" - "+esc(D.co.q):""}</div></div></div>${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}
- <div class="g"><div class="m"><small>Ventes du jour</small><b>${F(ts)}</b></div><div class="m"><small>Bénéfice du jour</small><b>${F(td.reduce((a,s)=>a+mg(s),0)-te)}</b></div>
- <div class="m"><small>Dettes à recevoir</small><b style="color:${nd?"var(--rd)":"inherit"}">${F(dt)}</b><small>${late} à relancer</small></div><div class="m"><small>Stock bas</small><b style="color:${st?"var(--am)":"inherit"}">${st} produit(s)</b></div></div>
- <button class="pb" onclick="go('sell')">Nouvelle vente</button><button class="sb" onclick="go('exp')">Enregistrer une dépense</button>${D.s.length?`<button class="sb" style="border-color:var(--bd);color:var(--mu)" onclick="undo()">Annuler la dernière vente</button>`:""}
+function cg(a){const f=x=>x.t>=a,s=D.s.filter(f),e=D.e.filter(f),ch={},inv={};
+ const rv=s.reduce((x,y)=>x+y.tot,0),cogs=s.reduce((x,y)=>x+y.items.reduce((u,i)=>u+i.c*i.q,0),0);
+ e.forEach(x=>{const o=x.n=="I"?inv:ch;o[x.c]=(o[x.c]||0)+x.a});
+ const sm=o=>Object.keys(o).reduce((u,k)=>u+o[k],0),cht=sm(ch);
+ return{s,e,rv,cogs,mb:rv-cogs,ch,cht,res:rv-cogs-cht,inv,invt:sm(inv)}}
+function bal(a){const o={};D.j.filter(j=>j.t>=a).forEach(j=>{(o[j.d]=o[j.d]||{d:0,c:0}).d+=j.m;(o[j.c]=o[j.c]||{d:0,c:0}).c+=j.m});
+ return Object.keys(o).sort().map(k=>({k,l:ACC[k]||"",d:o[k].d,c:o[k].c,sd:Math.max(0,o[k].d-o[k].c),sc:Math.max(0,o[k].c-o[k].d)}))}
+const pa=()=>xp?d0()-(xp-1)*864e5:0,nf=n=>Math.round(n).toLocaleString("fr-FR");
+const pc=()=>`<div class="ch">${[[7,"7 jours"],[30,"30 jours"],[0,"Tout"]].map(x=>`<button class="c ${xp==x[0]?"on":""}" onclick="xp=${x[0]};render()">${x[1]}</button>`).join("")}</div>`;
+const rw=(a,b,s)=>`<div class="r"><span>${a}</span><b${s?` style="${s}"`:""}>${b}</b></div>`,hd=t=>`<div class="mu" style="margin-top:8px;font-weight:600">${t}</div>`,cdd=(t,x)=>`<div class="cd" style="margin-bottom:10px"><b>${t}</b>${x}</div>`;
+function V(){const g=cg(d0()),agg={};
+ g.s.forEach(s=>s.items.forEach(i=>{const a=agg[i.n]||(agg[i.n]={q:0,m:0,u:i.u||""});a.q+=i.q;a.m+=i.q*i.p}));
+ const top=Object.keys(agg).sort((x,y)=>agg[y].m-agg[x].m).slice(0,5),dts=D.cr.filter(c=>rest(c)>0).sort((x,y)=>rest(y)-rest(x)).slice(0,5),
+ sb=D.p.filter(p=>p.s!=null&&p.s<=(p.a==null?5:p.a)).sort((x,y)=>x.s-y.s).slice(0,5),cl=g.res<0?"var(--rd)":"var(--ac)";
+ return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">${D.co.logo?`<img src="${D.co.logo}" alt="Logo" style="width:44px;height:44px;border-radius:10px;object-fit:cover">`:""}<div><h1 style="margin:0">${esc(D.co.n)}</h1><div class="mu">${esc(D.co.v)}${D.co.q?" - "+esc(D.co.q):""}</div></div></div>
+ ${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}
+ <div class="g"><div class="m"><small>Ventes du jour</small><b>${F(g.rv)}</b></div><div class="m"><small>Bénéfice du jour</small><b style="color:${cl}">${F(g.res)}</b></div></div>
+ <button class="pb" onclick="go('sell')">Nouvelle vente</button><button class="sb" onclick="go('exp')">Enregistrer une dépense</button>
+ ${cdd("Bénéfice du jour",hd("PRODUITS")+rw("Ventes du jour",F(g.rv))+hd("CHARGES")+rw("Coût d’achat des produits vendus",F(g.cogs))+rw("Dépenses d’exploitation",F(g.cht))+rw("Total des charges",F(g.cogs+g.cht))+rw("BÉNÉFICE DU JOUR",F(g.res),"color:"+cl)+(g.invt?`<p class="mu" style="margin:6px 0 0">Investissements du jour, non déduits : ${F(g.invt)}</p>`:""))}
+ ${cdd("5 meilleures ventes du jour",top.length?top.map(n=>rw(`${esc(n)} <span class="mu">(${agg[n].q} ${esc(agg[n].u)})</span>`,F(agg[n].m))).join(""):`<p class="mu" style="margin:6px 0 0">Aucune vente aujourd’hui.</p>`)}
+ ${cdd("5 plus grosses dettes",dts.length?dts.map(c=>rw(`${esc(c.client)} <span class="mu">(${Math.floor((Date.now()-c.t)/864e5)} j)</span>`,F(rest(c)),"color:var(--rd)")).join(""):`<p class="mu" style="margin:6px 0 0">Aucune dette en cours.</p>`)}
+ ${cdd("5 stocks les plus bas",sb.length?sb.map(p=>rw(esc(p.n),p.s<=0?"Épuisé":p.s+" "+esc(p.u),"color:"+(p.s<=0?"var(--rd)":"var(--am)"))).join(""):`<p class="mu" style="margin:6px 0 0">Aucun stock sous le seuil d’alerte.</p>`)}
+ ${D.s.length?`<button class="sb" style="border-color:var(--bd);color:var(--mu)" onclick="undo()">Annuler la dernière vente</button>`:""}
  <p class="mu">Pour installer l’application : menu du navigateur, puis « Ajouter à l’écran d’accueil ». Vos données restent dans ce téléphone.</p>`}
 function S(){
  const T=tot(),ids=Object.keys(cart);
@@ -197,12 +215,21 @@ function S(){
  <div class="ch">${Object.keys(PY).map(k=>`<button class="c ${pay==k?"on":""}" onclick="pay='${k}';render()">${PY[k][0]}</button>`).join("")}</div>
  ${pay=="cr"?`<input placeholder="Nom du client" value="${esc(cl)}" oninput="cl=this.value"><input placeholder="Téléphone (pour le rappel WhatsApp)" inputmode="tel" value="${esc(ph)}" oninput="ph=this.value">`:""}
  ${msg?`<p class="er">${esc(msg)}</p>`:""}<button class="pb" onclick="sell()">Valider la vente</button>`}
-function X(){
- return `<h1>Nouvelle dépense</h1><input type="number" inputmode="decimal" placeholder="Montant en FCFA" value="${esc(ex.a)}" oninput="ex.a=this.value">
+function X(){const I=ex.n=="I",L=I?IV:CT;
+ return `<h1>${I?"Nouvel investissement":"Nouvelle dépense"}</h1>
+ <div class="ch"><button class="c ${I?"":"on"}" onclick="ex.n='E';ex.c='605';render()">Exploitation</button><button class="c ${I?"on":""}" onclick="ex.n='I';ex.c='244';render()">Investissement</button></div>
+ <p class="mu" style="margin:0">${I?"Achat d’un bien durable (matériel, véhicule, mobilier) : il n’est pas déduit du bénéfice.":"Charge courante : elle est déduite du bénéfice."}</p>
+ <input type="number" inputmode="decimal" placeholder="Montant en FCFA" value="${esc(ex.a)}" oninput="ex.a=this.value">
  <input placeholder="Détail (facultatif)" value="${esc(ex.l)}" oninput="ex.l=this.value">
- <select onchange="ex.c=this.value">${Object.keys(CT).map(k=>`<option value="${k}" ${ex.c==k?"selected":""}>${CT[k]}</option>`).join("")}</select>
+ <select onchange="ex.c=this.value">${Object.keys(L).map(k=>`<option value="${k}" ${ex.c==k?"selected":""}>${k} - ${L[k]}</option>`).join("")}</select>
  <div class="ch">${["cash","om","mm"].map(k=>`<button class="c ${ex.m==k?"on":""}" onclick="ex.m='${k}';render()">${PY[k][0]}</button>`).join("")}</div>
- ${msg?`<p class="er">${esc(msg)}</p>`:""}<button class="pb" onclick="spend()">Enregistrer</button><button class="sb" onclick="go('home')">Annuler</button>`}
+ ${msg?`<p class="er">${esc(msg)}</p>`:""}<button class="pb" onclick="spend()">Enregistrer</button><button class="sb" onclick="go('dep')">Annuler</button>`}
+function delx(t){D.e=D.e.filter(x=>x.t!=t);D.j=D.j.filter(j=>!(j.t==t&&/^(Dépense|Investissement)/.test(j.l)));save();msg="Dépense supprimée.";render()}
+function Dp(){const a=pa(),L=D.e.filter(e=>e.t>=a).sort((x,y)=>y.t-x.t),g=cg(a);
+ return `<h1>Fiche des dépenses</h1>${pc()}${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}
+ <div class="g"><div class="m"><small>Charges d’exploitation</small><b>${F(g.cht)}</b></div><div class="m"><small>Investissements</small><b>${F(g.invt)}</b></div></div>
+ <button class="pb" onclick="go('exp')">Nouvelle dépense</button>
+ ${L.length?L.map(e=>`<div class="cd" style="margin-bottom:8px"><div class="r" style="border:0;padding:0"><b>${esc(e.l)}</b><b>${F(e.a)}</b></div><div class="mu">${dd(e.t)} - ${e.c} ${esc(ACC[e.c]||"")}<br>${e.n=="I"?"Investissement":"Exploitation"} - ${PY[e.m||"cash"][0]}</div><button class="c" style="margin-top:6px" onclick="delx(${e.t})">Supprimer</button></div>`).join(""):`<p class="mu">Aucune dépense sur cette période.</p>`}`}
 function Dt(){
  const L=D.cr.filter(c=>rest(c)>0).sort((a,b)=>a.t-b.t),T=L.reduce((a,c)=>a+rest(c),0);
  return `<h1>Carnet de dettes</h1><div class="m" style="margin-bottom:10px"><small>Total à recevoir</small><b style="font-size:24px">${F(T)}</b></div>
@@ -211,33 +238,39 @@ function Dt(){
  <div class="mu" style="${j>7?"color:var(--rd)":""}">Depuis ${j} jour(s)${c.paid?" - déjà payé "+F(c.paid):""}</div>
  <div style="display:flex;gap:6px;margin-top:8px"><input id="pv${c.id}" type="number" inputmode="decimal" placeholder="Montant reçu" style="margin:0"><button class="c on" onclick="pay1(${c.id})">Encaisser</button></div>
  <p style="margin:8px 0 0"><a class="w" href="${wa(c)}" target="_blank" rel="noopener">Relancer par WhatsApp</a> <a class="w" href="${sms(c)}">SMS</a></p></div>`}).join(""):`<p class="mu">Aucune dette en cours. Les ventes à crédit apparaîtront ici.</p>`}`}
-function R(){
- const t0=d0(),w0=t0-6*864e5,ws=D.s.filter(s=>s.t>=w0),we=D.e.filter(e=>e.t>=w0);
- const sales=ws.reduce((a,s)=>a+s.tot,0),exp=we.reduce((a,e)=>a+e.a,0),gain=ws.reduce((a,s)=>a+mg(s),0)-exp;
- const days=[...Array(7)].map((_,i)=>{const a=w0+i*864e5;return{d:new Date(a),v:D.s.filter(s=>s.t>=a&&s.t<a+864e5).reduce((x,s)=>x+s.tot,0)}});
- const mx=Math.max(1,...days.map(x=>x.v)),q={};ws.forEach(s=>s.items.forEach(i=>q[i.n]=(q[i.n]||0)+i.q));
- const top=Object.keys(q).sort((a,b)=>q[b]-q[a])[0];
- return `<h1>Résumé de la semaine</h1><p class="mu" style="margin:0">Cette semaine, votre gain estimé est de</p>
- <p style="font-size:28px;font-weight:700;margin:0 0 8px;color:${gain<0?"var(--rd)":"var(--ac)"}">${F(gain)}</p>
+function R(){const a=pa(),g=cg(a),B=bal(a),w0=d0()-6*864e5,
+ days=[...Array(7)].map((_,i)=>{const s=w0+i*864e5;return{d:new Date(s),v:D.s.filter(x=>x.t>=s&&x.t<s+864e5).reduce((u,x)=>u+x.tot,0)}}),mx=Math.max(1,...days.map(x=>x.v)),
+ sm=k=>B.reduce((u,x)=>u+x[k],0),cl=g.res<0?"var(--rd)":"var(--ac)",ks=o=>Object.keys(o).sort();
+ return `<h1>Résumé</h1>${pc()}<p class="mu" style="margin:0">Résultat de la période (produits - charges)</p>
+ <p style="font-size:28px;font-weight:700;margin:0 0 8px;color:${cl}">${F(g.res)}</p>
  <div class="bar">${days.map(x=>`<div style="height:${Math.round(x.v/mx*100)}%"></div>`).join("")}</div>
- <div class="lb">${days.map(x=>`<span>${"DLMMJVS"[x.d.getDay()]}</span>`).join("")}</div>
- <div class="g" style="margin-top:12px"><div class="m"><small>Ventes</small><b>${F(sales)}</b></div><div class="m"><small>Dépenses</small><b>${F(exp)}</b></div></div>
- <div class="r"><span>Produit le plus vendu</span><b>${top?esc(top)+" ("+q[top]+")":"-"}</b></div>
- <h2>Journal (comptes SYSCOHADA)</h2><p class="mu">Écritures générées automatiquement. À faire valider par un comptable.</p>
- ${D.j.slice(-12).reverse().map(j=>`<div class="r"><span>${esc(j.l)}<br><small class="mu">${new Date(j.t).toLocaleDateString("fr-FR")} - D ${j.d} / C ${j.c}</small></span><b>${F(j.m)}</b></div>`).join("")||`<p class="mu">Aucune écriture pour le moment.</p>`}`}
+ <div class="lb">${days.map(x=>`<span>${"DLMMJVS"[x.d.getDay()]}</span>`).join("")}</div><p class="mu" style="text-align:center;margin:2px 0 10px">Ventes des 7 derniers jours</p>
+ <h2>Mini compte de gestion</h2>
+ ${cdd("PRODUITS",rw("701 Ventes de marchandises",F(g.rv)))}
+ ${cdd("CHARGES",rw("601 Coût d’achat des marchandises vendues <span class='mu'>(calculé)</span>",F(g.cogs))+ks(g.ch).map(k=>rw(k+" "+esc(ACC[k]||""),F(g.ch[k]))).join("")+rw("Total des charges",F(g.cogs+g.cht),"font-size:16px"))}
+ ${cdd("RÉSULTAT",rw("Ventes - charges",F(g.res),"color:"+cl+";font-size:16px")+rw("Pour information : marge brute",F(g.mb)))}
+ ${cdd("INVESTISSEMENTS <span class='mu'>(non déduits du résultat)</span>",ks(g.inv).length?ks(g.inv).map(k=>rw(k+" "+esc(ACC[k]||""),F(g.inv[k]))).join("")+rw("Total investissements",F(g.invt),"font-size:16px"):`<p class="mu" style="margin:6px 0 0">Aucun investissement sur la période.</p>`)}
+ <h2>Balance des comptes</h2>
+ <div class="cd" style="padding:8px 10px"><div class="r" style="border:0;font-size:12px;color:var(--mu)"><span style="width:42px">Compte</span><span style="flex:1;padding:0 6px">Libellé</span><span style="width:68px;text-align:right">Solde D</span><span style="width:68px;text-align:right">Solde C</span></div>
+ ${B.map(x=>`<div class="r" style="font-size:12px"><span style="width:42px">${x.k}</span><span style="flex:1;padding:0 6px">${esc(x.l)}</span><span style="width:68px;text-align:right">${x.sd?nf(x.sd):""}</span><span style="width:68px;text-align:right">${x.sc?nf(x.sc):""}</span></div>`).join("")||`<p class="mu">Aucune écriture.</p>`}
+ <div class="r" style="font-size:12px;font-weight:700"><span style="flex:1">TOTAL</span><span style="width:68px;text-align:right">${nf(sm("sd"))}</span><span style="width:68px;text-align:right">${nf(sm("sc"))}</span></div></div>
+ <h2>Dernières écritures</h2>
+ ${D.j.filter(j=>j.t>=a).slice(-10).reverse().map(j=>`<div class="r"><span>${esc(j.l)}<br><small class="mu">${dd(j.t)} - D ${j.d} / C ${j.c}</small></span><b>${F(j.m)}</b></div>`).join("")||`<p class="mu">Aucune écriture pour le moment.</p>`}
+ <div class="cd" style="margin-top:14px"><b>À faire valider par un comptable</b><p class="mu" style="margin:6px 0">Ces états sont des documents de gestion établis automatiquement. Le stock et les achats de marchandises ne sont pas comptabilisés : le coût d’achat est calculé à partir des prix d’achat saisis. Ils ne remplacent pas une comptabilité certifiée.</p>
+ <p style="margin:0;font-size:14px"><b>Référence :</b> ${esc(REFA)}, ${esc(REFB.split(", Mob")[0])}, <a href="tel:+22675927414" style="color:var(--ac)">Mob : +226 75 92 74 14</a></p></div>`}
 function Pr(){
  return `<h1>Produits et boutique</h1>${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}<button class="sb" onclick="editco()">Modifier les informations de l’entreprise</button>
  <h2>Produits</h2><p class="mu">Nom, prix de vente, prix d’achat, stock (vide = non suivi).</p>
- ${D.p.map(p=>`<div class="cd" style="margin-bottom:8px"><input value="${esc(p.n)}" onchange="pe(${p.id},'n',this.value)"><select onchange="pe(${p.id},'u',this.value)">${UN.map(u=>`<option ${p.u==u?"selected":""}>${u}</option>`).join("")}</select><p class="mu" style="margin:4px 0">Prix de vente / Prix d’achat / Stock (en ${esc(p.u)})</p><div class="sm" style="grid-template-columns:repeat(3,minmax(0,1fr))">
- <input type="number" inputmode="decimal" value="${p.p}" onchange="pe(${p.id},'p',this.value)" aria-label="Prix de vente"><input type="number" inputmode="decimal" value="${p.c}" onchange="pe(${p.id},'c',this.value)" aria-label="Prix d’achat"><input type="number" inputmode="decimal" value="${p.s??""}" onchange="pe(${p.id},'s',this.value)" aria-label="Stock"></div>
+ ${D.p.map(p=>`<div class="cd" style="margin-bottom:8px"><input value="${esc(p.n)}" onchange="pe(${p.id},'n',this.value)"><select onchange="pe(${p.id},'u',this.value)">${UN.map(u=>`<option ${p.u==u?"selected":""}>${u}</option>`).join("")}</select><p class="mu" style="margin:4px 0">Prix de vente / Prix d’achat / Stock / Seuil d’alerte (en ${esc(p.u)})</p><div class="sm" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+ <input type="number" inputmode="decimal" value="${p.p}" onchange="pe(${p.id},'p',this.value)" aria-label="Prix de vente"><input type="number" inputmode="decimal" value="${p.c}" onchange="pe(${p.id},'c',this.value)" aria-label="Prix d’achat"><input type="number" inputmode="decimal" value="${p.s??""}" onchange="pe(${p.id},'s',this.value)" aria-label="Stock"><input type="number" inputmode="decimal" value="${p.a==null?5:p.a}" onchange="pe(${p.id},'a',this.value)" aria-label="Seuil d’alerte"></div>
  <button class="c" onclick="delp(${p.id})">Supprimer</button></div>`).join("")}
  <button class="sb" onclick="addp()">Ajouter un produit</button><h2>Sauvegarde</h2><p class="mu">Copiez vos données pour les garder ou les passer sur un autre téléphone.</p><button class="sb" onclick="bk()">Créer la sauvegarde</button><textarea id="bt" rows="4" placeholder="Collez ici une sauvegarde pour restaurer">${esc(bkv)}</textarea><button class="sb" onclick="rs()">Restaurer depuis le texte</button><h2>Zone sensible</h2>
  <button class="sb" style="color:var(--rd);border-color:var(--rd)" onclick="if(wipe){D=null;try{localStorage.removeItem(K)}catch(e){}location.reload()}else{wipe=true;render()}">${wipe?"Confirmer : tout effacer":"Effacer toutes les données"}</button>`}
 function render(){
  if(!D.co&&tab!="setup"){tab="setup";if(!cf.c)cf={c:"Burkina Faso"}}
- $("#app").innerHTML={home:V,sell:S,exp:X,debts:Dt,sum:R,prod:Pr,setup:Se,out:Ex}[tab]();
- const m=[["home","Accueil"],["sell","Vente"],["debts","Dettes"],["sum","Résumé"],["prod","Produits"],["out","Export"]];
+ $("#app").innerHTML={home:V,sell:S,exp:X,debts:Dt,sum:R,prod:Pr,dep:Dp,setup:Se,out:Ex}[tab]();
+ const m=[["home","Accueil"],["sell","Vente"],["dep","Dépenses"],["debts","Dettes"],["sum","Résumé"],["prod","Produits"],["out","Export"]];
  $("#nav").style.display=D.co?"flex":"none";
- $("#nav").innerHTML=m.map(x=>`<button class="${tab==x[0]||(tab=="exp"&&x[0]=="home")?"on":""}" onclick="go('${x[0]}')">${x[1]}</button>`).join("")}
+ $("#nav").innerHTML=m.map(x=>`<button class="${tab==x[0]||(tab=="exp"&&x[0]=="dep")?"on":""}" onclick="go('${x[0]}')">${x[1]}</button>`).join("")}
 render();
 </script></body></html>
