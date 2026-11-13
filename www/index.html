@@ -112,7 +112,7 @@ function Ex(){return `<h1>Export</h1><p class="mu">Choisissez la période, puis 
  <div class="ch">${[[7,"7 jours"],[30,"30 jours"],[0,"Tout"]].map(x=>`<button class="c ${xp==x[0]?"on":""}" onclick="xp=${x[0]};render()">${x[1]}</button>`).join("")}</div>
  ${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}
  <button class="pb" onclick="xl()">Exporter en Excel (.xlsx)</button><button class="sb" onclick="pd()">Exporter en PDF</button>
- <p class="mu">Contenu : résumé, compte de gestion, balance des comptes, ventes, dépenses, dettes, stock et journal. À faire valider par un comptable.</p>`}
+ <p class="mu">Contenu : résumé, compte de gestion, balance des comptes, ventes, dépenses, dettes, stock et journal. À faire valider par un comptable.</p>${pro()}`}
 const CRT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
 const crc=u=>{let c=-1;for(let i=0;i<u.length;i++)c=CRT[(c^u[i])&255]^(c>>>8);return(c^-1)>>>0};
 function zip(files){const P=[],Z=[];let o=0;const le=(v,n)=>{const a=[];for(let i=0;i<n;i++)a.push((v>>>(8*i))&255);return a},E=new TextEncoder();
@@ -193,6 +193,13 @@ function bal(a){const o={};D.j.filter(j=>j.t>=a).forEach(j=>{(o[j.d]=o[j.d]||{d:
 const pa=()=>xp?d0()-(xp-1)*864e5:0,nf=n=>Math.round(n).toLocaleString("fr-FR");
 const pc=()=>`<div class="ch">${[[7,"7 jours"],[30,"30 jours"],[0,"Tout"]].map(x=>`<button class="c ${xp==x[0]?"on":""}" onclick="xp=${x[0]};render()">${x[1]}</button>`).join("")}</div>`;
 const rw=(a,b,s)=>`<div class="r"><span>${a}</span><b${s?` style="${s}"`:""}>${b}</b></div>`,hd=t=>`<div class="mu" style="margin-top:8px;font-weight:600">${t}</div>`,cdd=(t,x)=>`<div class="cd" style="margin-bottom:10px"><b>${t}</b>${x}</div>`;
+const WA="22675927414",wal=t=>"https://wa.me/"+WA+"?text="+encodeURIComponent(t);
+const fbk=()=>`<a class="sb" style="display:block;text-align:center;text-decoration:none" href="${wal("Bonjour, voici mon retour sur l’application Cahier du commerçant"+(D.co?" ("+D.co.n+")":"")+" :\n\n1) Ce que j’aime :\n2) Ce qui me gêne :\n3) Ce qui manque :")}" target="_blank" rel="noopener">Envoyer un retour</a>`;
+const pro=()=>`<div class="cd" style="margin-top:14px;border-color:var(--ac)"><b>À faire valider par un comptable</b>
+ <p class="mu" style="margin:6px 0">Ces états sont des documents de gestion établis automatiquement : le stock et les achats de marchandises ne sont pas comptabilisés. Ils ne remplacent pas une comptabilité certifiée.</p>
+ <p style="margin:8px 0">Vos chiffres méritent un regard d’expert. Un professionnel peut valider vos états, mettre en place votre comptabilité aux normes SYSCOHADA et vous aider à préparer vos dossiers de banque, d’impôts ou de financement. Vous gardez l’esprit tranquille et vous décidez avec des chiffres sûrs. Un simple message suffit pour en discuter.</p>
+ <a class="pb" style="display:block;text-align:center;text-decoration:none" href="${wal("Bonjour M. SAVADOGO, je vous écris depuis l’application Cahier du commerçant"+(D.co?" ("+D.co.n+")":"")+". J’aimerais faire valider mes états ou être accompagné(e) en comptabilité.")}" target="_blank" rel="noopener">Contacter un professionnel</a>
+ <p class="mu" style="margin:8px 0 0"><b>Référence :</b> ${esc(REFA)}, ${esc(REFB.split(", Mob")[0])}, <a href="tel:+22675927414" style="color:var(--ac)">Mob : +226 75 92 74 14</a></p></div>`;
 function V(){const g=cg(d0()),agg={};
  g.s.forEach(s=>s.items.forEach(i=>{const a=agg[i.n]||(agg[i.n]={q:0,m:0,u:i.u||""});a.q+=i.q;a.m+=i.q*i.p}));
  const top=Object.keys(agg).sort((x,y)=>agg[y].m-agg[x].m).slice(0,5),dts=D.cr.filter(c=>rest(c)>0).sort((x,y)=>rest(y)-rest(x)).slice(0,5),
@@ -206,6 +213,7 @@ function V(){const g=cg(d0()),agg={};
  ${cdd("5 plus grosses dettes",dts.length?dts.map(c=>rw(`${esc(c.client)} <span class="mu">(${Math.floor((Date.now()-c.t)/864e5)} j)</span>`,F(rest(c)),"color:var(--rd)")).join(""):`<p class="mu" style="margin:6px 0 0">Aucune dette en cours.</p>`)}
  ${cdd("5 stocks les plus bas",sb.length?sb.map(p=>rw(esc(p.n),p.s<=0?"Épuisé":p.s+" "+esc(p.u),"color:"+(p.s<=0?"var(--rd)":"var(--am)"))).join(""):`<p class="mu" style="margin:6px 0 0">Aucun stock sous le seuil d’alerte.</p>`)}
  ${D.s.length?`<button class="sb" style="border-color:var(--bd);color:var(--mu)" onclick="undo()">Annuler la dernière vente</button>`:""}
+ ${fbk()}
  <p class="mu">Pour installer l’application : menu du navigateur, puis « Ajouter à l’écran d’accueil ». Vos données restent dans ce téléphone.</p>`}
 function S(){
  const T=tot(),ids=Object.keys(cart);
@@ -256,10 +264,9 @@ function R(){const a=pa(),g=cg(a),B=bal(a),w0=d0()-6*864e5,
  <div class="r" style="font-size:12px;font-weight:700"><span style="flex:1">TOTAL</span><span style="width:68px;text-align:right">${nf(sm("sd"))}</span><span style="width:68px;text-align:right">${nf(sm("sc"))}</span></div></div>
  <h2>Dernières écritures</h2>
  ${D.j.filter(j=>j.t>=a).slice(-10).reverse().map(j=>`<div class="r"><span>${esc(j.l)}<br><small class="mu">${dd(j.t)} - D ${j.d} / C ${j.c}</small></span><b>${F(j.m)}</b></div>`).join("")||`<p class="mu">Aucune écriture pour le moment.</p>`}
- <div class="cd" style="margin-top:14px"><b>À faire valider par un comptable</b><p class="mu" style="margin:6px 0">Ces états sont des documents de gestion établis automatiquement. Le stock et les achats de marchandises ne sont pas comptabilisés : le coût d’achat est calculé à partir des prix d’achat saisis. Ils ne remplacent pas une comptabilité certifiée.</p>
- <p style="margin:0;font-size:14px"><b>Référence :</b> ${esc(REFA)}, ${esc(REFB.split(", Mob")[0])}, <a href="tel:+22675927414" style="color:var(--ac)">Mob : +226 75 92 74 14</a></p></div>`}
+ ${pro()}`}
 function Pr(){
- return `<h1>Produits et boutique</h1>${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}<button class="sb" onclick="editco()">Modifier les informations de l’entreprise</button>
+ return `<h1>Produits et boutique</h1>${msg?`<p style="color:var(--ac);font-weight:600">${esc(msg)}</p>`:""}<button class="sb" onclick="editco()">Modifier les informations de l’entreprise</button>${fbk()}
  <h2>Produits</h2><p class="mu">Nom, prix de vente, prix d’achat, stock (vide = non suivi).</p>
  ${D.p.map(p=>`<div class="cd" style="margin-bottom:8px"><input value="${esc(p.n)}" onchange="pe(${p.id},'n',this.value)"><select onchange="pe(${p.id},'u',this.value)">${UN.map(u=>`<option ${p.u==u?"selected":""}>${u}</option>`).join("")}</select><p class="mu" style="margin:4px 0">Prix de vente / Prix d’achat / Stock / Seuil d’alerte (en ${esc(p.u)})</p><div class="sm" style="grid-template-columns:repeat(2,minmax(0,1fr))">
  <input type="number" inputmode="decimal" value="${p.p}" onchange="pe(${p.id},'p',this.value)" aria-label="Prix de vente"><input type="number" inputmode="decimal" value="${p.c}" onchange="pe(${p.id},'c',this.value)" aria-label="Prix d’achat"><input type="number" inputmode="decimal" value="${p.s??""}" onchange="pe(${p.id},'s',this.value)" aria-label="Stock"><input type="number" inputmode="decimal" value="${p.a==null?5:p.a}" onchange="pe(${p.id},'a',this.value)" aria-label="Seuil d’alerte"></div>
